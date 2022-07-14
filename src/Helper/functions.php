@@ -146,7 +146,7 @@ if (! function_exists('context_set')) {
      */
     function context_set(string $key, $data): bool
     {
-        return (bool)\Hyperf\Utils\Context::set($key, $data);
+        return (bool)\Hyperf\Context\Context::set($key, $data);
     }
 }
 
@@ -158,7 +158,7 @@ if (! function_exists('context_get')) {
      */
     function context_get(string $key)
     {
-        return \Hyperf\Utils\Context::get($key);
+        return \Hyperf\Context\Context::get($key);
     }
 }
 
@@ -177,12 +177,14 @@ if (! function_exists('app_verify')) {
 if (! function_exists('snowflake_id')) {
     /**
      * 生成雪花ID
+     * @param int|null $workerId
      * @return String
-     * @throws Exception
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
      */
-    function snowflake_id(): String
+    function snowflake_id(?int $workerId = null): String
     {
-        return container()->get(Id::class)->getId();
+        return container()->get(Id::class)->getId($workerId);
     }
 }
 
@@ -205,12 +207,12 @@ if (! function_exists('push_queue_message')) {
      * 推送消息到队列
      * @param QueueMessageVo $message
      * @param array $receiveUsers
-     * @return int 消息ID，若失败返回 -1
+     * @return bool
      * @throws Throwable
      * @throws \Psr\Container\ContainerExceptionInterface
      * @throws \Psr\Container\NotFoundExceptionInterface
      */
-    function push_queue_message(QueueMessageVo $message, array $receiveUsers = []): int
+    function push_queue_message(QueueMessageVo $message, array $receiveUsers = []): bool
     {
         return container()
             ->get(\App\System\Service\SystemQueueLogService::class)

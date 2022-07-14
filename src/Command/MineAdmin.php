@@ -17,9 +17,9 @@ use Mine\MineCommand;
 
 /**
  * Class MineAdmin
- * @Command
  * @package System\Command
  */
+#[Command]
 class MineAdmin extends MineCommand
 {
     protected $name = 'mine';

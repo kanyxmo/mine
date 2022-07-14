@@ -12,11 +12,12 @@
 declare(strict_types=1);
 namespace Mine\Helper;
 
+use App\System\Model\SystemRole;
 use App\System\Model\SystemUser;
+use App\System\Service\SystemUserService;
 use Mine\Exception\TokenException;
 use Mine\MineRequest;
-use Phper666\JWTAuth\JWT;
-use Phper666\JWTAuth\Util\JWTUtil;
+use Xmo\JWTAuth\JWT;
 use Psr\SimpleCache\InvalidArgumentException;
 
 class LoginUser
@@ -24,12 +25,12 @@ class LoginUser
     /**
      * @var JWT
      */
-    protected $jwt;
+    protected JWT $jwt;
 
     /**
      * @var MineRequest
      */
-    protected $request;
+    protected MineRequest $request;
 
 
     /**
@@ -86,11 +87,11 @@ class LoginUser
 
     /**
      * 获取当前登录用户ID
-     * @return string
+     * @return int
      */
-    public function getId(): string
+    public function getId(): int
     {
-        return (string) $this->jwt->getParserData()['id'];
+        return $this->jwt->getParserData()['id'];
     }
 
     /**
@@ -144,7 +145,7 @@ class LoginUser
      * 是否为超级管理员（创始人），用户禁用对创始人没用
      * @return bool
      */
-    public function isSuperAdmin():bool
+    public function isSuperAdmin(): bool
     {
         return env('SUPER_ADMIN') == $this->getId();
     }
@@ -152,10 +153,15 @@ class LoginUser
     /**
      * 是否为管理员角色
      * @return bool
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
      */
     public function isAdminRole(): bool
     {
-        return env('ADMIN_ROLE') == $this->getRole();
+        return in_array(
+            SystemRole::find(env('ADMIN_ROLE'), ['code'])->code,
+            container()->get(SystemUserService::class)->getInfo()['roles']
+        );
     }
 
     /**

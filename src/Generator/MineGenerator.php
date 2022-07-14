@@ -19,17 +19,17 @@ abstract class MineGenerator
     /**
      * @var string
      */
-    protected $stubDir;
+    protected string $stubDir;
 
     /**
      * @var string
      */
-    protected $namespace;
+    protected string $namespace;
 
     /**
      * @var ContainerInterface
      */
-    protected $container;
+    protected ContainerInterface $container;
 
     /**
      * MineGenerator constructor.
@@ -67,5 +67,8 @@ abstract class MineGenerator
         $this->namespace = $namespace;
     }
 
-
+    public function replace(): self
+    {
+        return $this;
+    }
 }

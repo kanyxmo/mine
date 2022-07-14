@@ -1,6 +1,15 @@
 <?php
+declare(strict_types=1);
+/**
+ * MineAdmin is committed to providing solutions for quickly building web applications
+ * Please view the LICENSE file that was distributed with this source code,
+ * For the full copyright and license information.
+ * Thank you very much for using MineAdmin.
+ *
+ * @Author X.Mo<root@imoi.cn>
+ * @Link   https://gitee.com/xmo/MineAdmin
+ */
 
-declare(strict_types = 1);
 namespace {NAMESPACE};
 
 
@@ -25,9 +34,10 @@ class {CLASS_NAME} extends AbstractService
     /**
      * 获取树列表
      * @param array|null $params
+     * @param bool $isScope
      * @return array
      */
-    public function getTreeList(?array $params = null): array
+    public function getTreeList(?array $params = null, bool $isScope = true): array
     {
         if ($params['select'] ?? null) {
             $params['select'] = explode(',', $params['select']);
@@ -39,9 +49,10 @@ class {CLASS_NAME} extends AbstractService
     /**
      * 从回收站获取树列表
      * @param array|null $params
+     * @param bool $isScope
      * @return array
      */
-    public function getTreeListByRecycle(?array $params = null): array
+    public function getTreeListByRecycle(?array $params = null, bool $isScope = true): array
     {
         if ($params['select'] ?? null) {
             $params['select'] = explode(',', $params['select']);
@@ -95,7 +106,6 @@ class {CLASS_NAME} extends AbstractService
 
     /**
      * 真实删除数据，跳过存在子节点的数据
-     * @param string $ids
      * @return array
      */
     public function realDel(string $ids): ?array

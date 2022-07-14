@@ -1,4 +1,5 @@
 <?php
+
 /**
  * MineAdmin is committed to providing solutions for quickly building web applications
  * Please view the LICENSE file that was distributed with this source code,
@@ -10,6 +11,7 @@
  */
 
 declare(strict_types=1);
+
 namespace Mine\Command;
 
 use Hyperf\Command\Annotation\Command;
@@ -20,9 +22,9 @@ use Mine\Mine;
 
 /**
  * Class UpdateProjectCommand
- * @Command
  * @package System\Command
  */
+#[Command]
 class UpdateProjectCommand extends MineCommand
 {
     /**
@@ -31,9 +33,11 @@ class UpdateProjectCommand extends MineCommand
      */
     protected $name = 'mine:update';
 
-    protected $seed;
+    protected array $database = [];
 
-    protected $migrator;
+    protected Seed $seed;
+
+    protected Migrator $migrator;
 
     /**
      * UpdateProjectCommand constructor.
@@ -81,6 +85,4 @@ class UpdateProjectCommand extends MineCommand
 
         $this->line($this->getGreenText('updated successfully...'));
     }
-
-
 }

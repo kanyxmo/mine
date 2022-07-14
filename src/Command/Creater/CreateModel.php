@@ -20,9 +20,9 @@ use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Class CreateModel
- * @Command
  * @package System\Command\Creater
  */
+#[Command]
 class CreateModel extends MineCommand
 {
     protected $name = 'mine:model-gen';
@@ -62,7 +62,7 @@ class CreateModel extends MineCommand
 
             $tables = Db::select('SHOW TABLES');
             $key = "Tables_in_{$db}";
-            /** @var Array $tableList */
+
             $tableList = [];
             foreach ($tables as $k) {
                 $tmp = $k->$key;

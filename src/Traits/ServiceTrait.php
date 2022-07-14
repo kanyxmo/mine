@@ -29,84 +29,90 @@ trait ServiceTrait
     /**
      * 获取列表数据
      * @param array|null $params
+     * @param bool $isScope
      * @return array
      */
-    public function getList(?array $params = null): array
+    public function getList(?array $params = null, bool $isScope = true): array
     {
         if ($params['select'] ?? null) {
             $params['select'] = explode(',', $params['select']);
         }
         $params['recycle'] = false;
-        return $this->mapper->getList($params);
+        return $this->mapper->getList($params, $isScope);
     }
 
     /**
      * 从回收站过去列表数据
      * @param array|null $params
+     * @param bool $isScope
      * @return array
      */
-    public function getListByRecycle(?array $params = null): array
+    public function getListByRecycle(?array $params = null, bool $isScope = true): array
     {
         if ($params['select'] ?? null) {
             $params['select'] = explode(',', $params['select']);
         }
         $params['recycle'] = true;
-        return $this->mapper->getList($params);
+        return $this->mapper->getList($params, $isScope);
     }
 
     /**
      * 获取列表数据（带分页）
      * @param array|null $params
+     * @param bool $isScope
      * @return array
      */
-    public function getPageList(?array $params = null): array
+    public function getPageList(?array $params = null, bool $isScope = true): array
     {
         if ($params['select'] ?? null) {
             $params['select'] = explode(',', $params['select']);
         }
-        return $this->mapper->getPageList($params);
+        return $this->mapper->getPageList($params, $isScope);
     }
 
     /**
      * 从回收站获取列表数据（带分页）
      * @param array|null $params
+     * @param bool $isScope
      * @return array
      */
-    public function getPageListByRecycle(?array $params = null): array
+    public function getPageListByRecycle(?array $params = null, bool $isScope = true): array
     {
         if ($params['select'] ?? null) {
             $params['select'] = explode(',', $params['select']);
         }
         $params['recycle'] = true;
-        return $this->mapper->getPageList($params);
+        return $this->mapper->getPageList($params, $isScope);
     }
 
     /**
      * 获取树列表
      * @param array|null $params
+     * @param bool $isScope
      * @return array
      */
-    public function getTreeList(?array $params = null): array
+    public function getTreeList(?array $params = null, bool $isScope = true): array
     {
         if ($params['select'] ?? null) {
             $params['select'] = explode(',', $params['select']);
         }
         $params['recycle'] = false;
-        return $this->mapper->getTreeList($params);
+        return $this->mapper->getTreeList($params, $isScope);
     }
 
     /**
      * 从回收站获取树列表
      * @param array|null $params
+     * @param bool $isScope
      * @return array
      */
-    public function getTreeListByRecycle(?array $params = null): array
+    public function getTreeListByRecycle(?array $params = null, bool $isScope = true): array
     {
         if ($params['select'] ?? null) {
             $params['select'] = explode(',', $params['select']);
         }
         $params['recycle'] = true;
-        return $this->mapper->getTreeList($params);
+        return $this->mapper->getTreeList($params, $isScope);
     }
 
     /**
@@ -122,9 +128,9 @@ trait ServiceTrait
     /**
      * 批量新增
      * @param array $collects
-     * @Transaction
      * @return bool
      */
+    #[Transaction]
     public function batchSave(array $collects): bool
     {
         foreach ($collects as $collect) {
@@ -180,12 +186,12 @@ trait ServiceTrait
 
     /**
      * 单个或批量软删除数据
-     * @param string $ids
+     * @param array $ids
      * @return bool
      */
-    public function delete(String $ids): bool
+    public function delete(array $ids): bool
     {
-        return !empty($ids) && $this->mapper->delete(explode(',', $ids));
+        return !empty($ids) && $this->mapper->delete($ids);
     }
 
     /**
@@ -212,63 +218,68 @@ trait ServiceTrait
 
     /**
      * 单个或批量真实删除数据
-     * @param string $ids
+     * @param array $ids
      * @return bool
      */
-    public function realDelete(string $ids): bool
+    public function realDelete(array $ids): bool
     {
-        return !empty($ids) && $this->mapper->realDelete(explode(',', $ids));
+        return !empty($ids) && $this->mapper->realDelete($ids);
     }
 
     /**
      * 单个或批量从回收站恢复数据
-     * @param string $ids
+     * @param array $ids
      * @return bool
      */
-    public function recovery(string $ids): bool
+    public function recovery(array $ids): bool
     {
-        return !empty($ids) && $this->mapper->recovery(explode(',', $ids));
+        return !empty($ids) && $this->mapper->recovery($ids);
     }
 
     /**
      * 单个或批量禁用数据
-     * @param string $ids
+     * @param array $ids
      * @param string $field
      * @return bool
      */
-    public function disable(string $ids, string $field = 'status'): bool
+    public function disable(array $ids, string $field = 'status'): bool
     {
-        return !empty($ids) && $this->mapper->disable(explode(',', $ids), $field);
+        return !empty($ids) && $this->mapper->disable($ids, $field);
     }
 
     /**
      * 单个或批量启用数据
-     * @param string $ids
+     * @param array $ids
      * @param string $field
      * @return bool
      */
-    public function enable(string $ids, string $field = 'status'): bool
+    public function enable(array $ids, string $field = 'status'): bool
     {
-        return !empty($ids) && $this->mapper->enable(explode(',', $ids), $field);
+        return !empty($ids) && $this->mapper->enable($ids, $field);
     }
 
     /**
      * 修改数据状态
      * @param int $id
      * @param string $value
+     * @param string $filed
      * @return bool
      */
-    public function changeStatus(int $id, string $value): bool
+    public function changeStatus(int $id, string $value, string $filed = 'status'): bool
     {
-        if ($value === '0') {
-            $this->mapper->enable([$id]);
-            return true;
-        } else if ($value === '1') {
-            $this->mapper->disable([$id]);
-            return true;
-        } else {
-            return false;
-        }
+        return $value == MineModel::ENABLE ? $this->mapper->enable([ $id ], $filed) : $this->mapper->disable([ $id ], $filed);
+    }
+
+    /**
+     * 数字更新操作
+     * @param int $id
+     * @param string $field
+     * @param int $value
+     * @return bool
+     */
+    public function numberOperation(int $id, string $field, int $value): bool
+    {
+        return $this->mapper->numberOperation($id, $field, $value);
     }
 
     /**
@@ -278,20 +289,20 @@ trait ServiceTrait
      * @param string|null $filename
      * @return ResponseInterface
      * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
      */
-    public function export(array $params, ?string $dto, string $filename = null):ResponseInterface
+    public function export(array $params, ?string $dto, string $filename = null): ResponseInterface
     {
         if (empty($dto)) {
-            return make(MineResponse::class)->error('导出未指定DTO');
+            return container()->get(MineResponse::class)->error('导出未指定DTO');
         }
 
         if (empty($filename)) {
             $filename = $this->mapper->getModel()->getTable();
         }
 
-        $collection = new MineCollection();
-
-        return $collection->export($dto, $filename, $this->mapper->getList($params));
+        return (new MineCollection())->export($dto, $filename, $this->mapper->getList($params));
     }
 
     /**
@@ -300,8 +311,10 @@ trait ServiceTrait
      * @param \Closure|null $closure
      * @return bool
      * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
-     * @Transaction
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
      */
+    #[Transaction]
     public function import(string $dto, ?\Closure $closure = null): bool
     {
         return $this->mapper->import($dto, $closure);

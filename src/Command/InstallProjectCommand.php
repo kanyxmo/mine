@@ -21,9 +21,9 @@ use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Class InstallProjectCommand
- * @Command
  * @package System\Command
  */
+#[Command]
 class InstallProjectCommand extends MineCommand
 {
     /**
@@ -36,9 +36,9 @@ class InstallProjectCommand extends MineCommand
     protected CONST CONSOLE_RED_BEGIN = "\033[31;5;1m";
     protected CONST CONSOLE_END = "\033[0m";
 
-    protected $database = [];
+    protected array $database = [];
 
-    protected $redis = [];
+    protected array $redis = [];
 
     public function configure()
     {
@@ -123,8 +123,8 @@ class InstallProjectCommand extends MineCommand
 
             $this->line(PHP_EOL . ' Checking environmenting...' . PHP_EOL, 'comment');
 
-            if (version_compare(PHP_VERSION, '7.4', '<')) {
-                $this->error(sprintf(' php version should >= 7.4 >>> %sNO!%s', self::CONSOLE_RED_BEGIN, self::CONSOLE_END));
+            if (version_compare(PHP_VERSION, '8.0', '<')) {
+                $this->error(sprintf(' php version should >= 8.0 >>> %sNO!%s', self::CONSOLE_RED_BEGIN, self::CONSOLE_END));
                 exit;
             }
             $this->line(sprintf(" php version %s >>> %sOK!%s", PHP_VERSION, self::CONSOLE_GREEN_BEGIN, self::CONSOLE_END));
@@ -204,7 +204,6 @@ class InstallProjectCommand extends MineCommand
     protected function generatorEnvFile()
     {
         try {
-            $id = new Id();
             $env = parse_ini_file(BASE_PATH . '/.env.example', true);
             $env['APP_NAME'] = 'MineAdmin';
             $env['APP_ENV'] = 'dev';
@@ -227,8 +226,8 @@ class InstallProjectCommand extends MineCommand
             $env['AMQP_PASSWORD'] = 'guest';
             $env['AMQP_VHOST'] = '/';
             $env['AMQP_ENABLE'] = 'false';
-            $env['SUPER_ADMIN'] = (string) $id->getId();
-            $env['ADMIN_ROLE'] = (string) ($id->getId());
+            $env['SUPER_ADMIN'] = 1;
+            $env['ADMIN_ROLE'] = 1;
             $env['CONSOLE_SQL'] = 'true';
             $env['JWT_SECRET'] = base64_encode(random_bytes(64));
             $env['JWT_API_SECRET'] = base64_encode(random_bytes(64));
@@ -247,11 +246,11 @@ class InstallProjectCommand extends MineCommand
                     $envContent .= PHP_EOL;
                 }
             }
-            $dsn = sprintf("mysql:host=%s", $this->database['dbhost']);
+            $dsn = sprintf("mysql:host=%s;port=%s", $this->database['dbhost'], $this->database['dbport']);
             $pdo = new \PDO($dsn, $this->database['dbuser'], $this->database['dbpass']);
             $isSuccess = $pdo->query(
                 sprintf(
-                    'CREATE DATABASE IF NOT EXISTS %s DEFAULT CHARSET %s COLLATE %s_general_ci;',
+                    'CREATE DATABASE IF NOT EXISTS `%s` DEFAULT CHARSET %s COLLATE %s_general_ci;',
                     $this->database['dbname'], $this->database['charset'], $this->database['charset']
                 )
             );
@@ -312,10 +311,11 @@ class InstallProjectCommand extends MineCommand
             'nickname' => '创始人',
             'email' => 'admin@adminmine.com',
             'phone' => '16858888988',
+            'signed' => '广阔天地，大有所为',
             'dashboard' => 'statistics',
             'created_by' => 0,
             'updated_by' => 0,
-            'status' => 0,
+            'status' => 1,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s')
         ]);
@@ -328,7 +328,7 @@ class InstallProjectCommand extends MineCommand
             'sort' => 0,
             'created_by' => env('SUPER_ADMIN', 0),
             'updated_by' => 0,
-            'status' => 0,
+            'status' => 1,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
             'remark' => '系统内置角色，不可删除'

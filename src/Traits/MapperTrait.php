@@ -85,8 +85,8 @@ trait MapperTrait
         string $children='children'
     ): array
     {
-        $params['_mainAdmin_tree'] = true;
-        $params['_mainAdmin_tree_pid'] = $parentField;
+        $params['_mineadmin_tree'] = true;
+        $params['_mineadmin_tree_pid'] = $parentField;
         $data = $this->listQuerySetting($params, $isScope)->get();
         return $data->toTree([], $data[0]->{$parentField} ?? 0, $id, $parentField, $children);
     }
@@ -115,14 +115,14 @@ trait MapperTrait
     /**
      * 排序处理器
      * @param Builder $query
-     * @param array $params
+     * @param array|null $params
      * @return Builder
      */
-    public function handleOrder(Builder $query, array &$params): Builder
+    public function handleOrder(Builder $query, ?array &$params = null): Builder
     {
         // 对树型数据强行加个排序
-        if (isset($params['_mainAdmin_tree'])) {
-            $query->orderBy($params['_mainAdmin_tree_pid']);
+        if (isset($params['_mineadmin_tree'])) {
+            $query->orderBy($params['_mineadmin_tree_pid']);
         }
 
         if ($params['orderBy'] ?? false) {
@@ -160,7 +160,7 @@ trait MapperTrait
         $model = new $this->model;
         $attrs = $model->getFillable();
         foreach ($fields as $key => $field) {
-            if (!in_array(trim($field), $attrs)) {
+            if (!in_array(trim($field), $attrs) && mb_strpos(str_replace('AS', 'as', $field), 'as') === false) {
                 unset($fields[$key]);
             } else {
                 $fields[$key] = trim($field);
@@ -200,7 +200,7 @@ trait MapperTrait
      */
     public function save(array $data): int
     {
-        $this->filterExecuteAttributes($data);
+        $this->filterExecuteAttributes($data, $this->getModel()->incrementing);
         $model = $this->model::create($data);
         return $model->{$model->getKeyName()};
     }
@@ -208,7 +208,7 @@ trait MapperTrait
     /**
      * 读取一条数据
      * @param int $id
-     * @return MineModel
+     * @return MineModel|null
      */
     public function read(int $id): ?MineModel
     {
@@ -241,7 +241,7 @@ trait MapperTrait
      * 获取单列值
      * @param array $condition
      * @param string $columns
-     * @return array|null
+     * @return array
      */
     public function pluck(array $condition, string $columns = 'id'): array
     {
@@ -251,7 +251,7 @@ trait MapperTrait
     /**
      * 从回收站读取一条数据
      * @param int $id
-     * @return MineModel
+     * @return MineModel|null
      * @noinspection PhpUnused
      */
     public function readByRecycle(int $id): ?MineModel
@@ -279,11 +279,7 @@ trait MapperTrait
     public function update(int $id, array $data): bool
     {
         $this->filterExecuteAttributes($data, true);
-        $model = $this->model::find($id);
-        foreach ($data as $name => $val) {
-            $model[$name] = $val;
-        }
-        return $model->save();
+        return $this->model::find($id)->update($data) > 0;
     }
 
     /**
@@ -361,8 +357,10 @@ trait MapperTrait
      * @param \Closure|null $closure
      * @return bool
      * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
-     * @Transaction
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
      */
+    #[Transaction]
     public function import(string $dto, ?\Closure $closure = null): bool
     {
         return (new MineCollection())->import($dto, $this->getModel(), $closure);
@@ -435,5 +433,17 @@ trait MapperTrait
     public function min(?\Closure $closure = null, string $column = '*')
     {
         return $this->settingClosure($closure)->min($column);
+    }
+
+    /**
+     * 数字更新操作
+     * @param int $id
+     * @param string $field
+     * @param int $value
+     * @return bool
+     */
+    public function numberOperation(int $id, string $field, int $value): bool
+    {
+        return $this->update($id, [ $field => $value]);
     }
 }

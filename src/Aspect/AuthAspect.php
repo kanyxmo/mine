@@ -18,29 +18,18 @@ use Hyperf\Di\Aop\ProceedingJoinPoint;
 use Hyperf\Di\Exception\Exception;
 use Mine\Annotation\Auth;
 use Mine\Exception\TokenException;
-use Mine\Helper\LoginUser;
 
 /**
  * Class AuthAspect
  * @package Mine\Aspect
- * @Aspect
  */
+#[Aspect]
 class AuthAspect extends AbstractAspect
 {
 
     public $annotations = [
         Auth::class
     ];
-
-    /**
-     * @var LoginUser
-     */
-    protected $loginUser;
-
-    public function __construct(LoginUser $loginUser)
-    {
-        $this->loginUser = $loginUser;
-    }
 
     /**
      * @param ProceedingJoinPoint $proceedingJoinPoint
@@ -51,9 +40,19 @@ class AuthAspect extends AbstractAspect
      */
     public function process(ProceedingJoinPoint $proceedingJoinPoint)
     {
-        if ($this->loginUser->check()) {
-            return $proceedingJoinPoint->process();
+        /** @var Auth $auth */
+        if (isset($proceedingJoinPoint->getAnnotationMetadata()->method[Auth::class])) {
+            $auth = $proceedingJoinPoint->getAnnotationMetadata()->method[Auth::class];
         }
-        throw new TokenException(t('jwt.validate_fail'));
+
+        $scene = $auth->scene ?? 'default';
+
+        $loginUser = user($scene);
+
+        if (! $loginUser->check(null, $scene)) {
+            throw new TokenException(t('jwt.validate_fail'));
+        }
+
+        return $proceedingJoinPoint->process();
     }
 }

@@ -1,13 +1,12 @@
 <?php
-
 declare (strict_types=1);
+
 namespace {NAMESPACE};
 
 use Mine\MineModel;
 
 class {CLASS_NAME} extends MineModel
 {
-    public $incrementing = false;
     /**
      * The table associated with the model.
      *
@@ -28,4 +27,6 @@ class {CLASS_NAME} extends MineModel
      * @var array
      */
     protected $casts = [];
+
+    {RELATIONS}
 }

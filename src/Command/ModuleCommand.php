@@ -23,22 +23,21 @@ use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Class ModuleCommand
- * @Command
  * @package System\Command
  */
+#[Command]
 class ModuleCommand extends MineCommand
 {
     use ConfirmableTrait;
-
     /**
      * 安装命令
      * @var string
      */
     protected $name = 'mine:module';
 
-    protected $mine;
+    protected Mine $mine;
 
-    protected $migrator;
+    protected Migrator $migrator;
 
     public function __construct(Migrator $migrator)
     {

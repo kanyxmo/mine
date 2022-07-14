@@ -13,7 +13,7 @@ use App\System\Mapper\SystemQueueMessageMapper;
 use App\System\Model\SystemQueueLog;
 use App\System\Queue\Producer\MessageProducer;
 use App\System\Service\SystemQueueLogService;
-use Hyperf\Utils\Context;
+use Hyperf\Context\Context;
 use Mine\Amqp\Event\AfterProduce;
 use Mine\Amqp\Event\BeforeProduce;
 use Mine\Amqp\Event\FailToProduce;
@@ -23,11 +23,14 @@ use Hyperf\Event\Contract\ListenerInterface;
 use Hyperf\Event\Annotation\Listener;
 
 /**
- * @Listener
+ * 生产队列监听
+ * Class QueueProduceListener
+ * @package Mine\Amqp\Listener
  */
+#[Listener]
 class QueueProduceListener implements ListenerInterface
 {
-    private $service;
+    private SystemQueueLogService $service;
 
     public function listen(): array
     {
@@ -49,7 +52,6 @@ class QueueProduceListener implements ListenerInterface
      */
     public function process(object $event)
     {
-        $this->setId(snowflake_id());
         $this->service = container()->get(SystemQueueLogService::class);
         $class = get_class($event);
         $func = lcfirst(trim(strrchr($class, '\\'),'\\'));
@@ -65,7 +67,16 @@ class QueueProduceListener implements ListenerInterface
     {
         $queueName = strchr($event->producer->getRoutingKey(), '.', true) . '.queue';
 
-        $id = $this->getId();
+        $id = $this->service->save([
+            'exchange_name' => $event->producer->getExchange(),
+            'routing_key_name' => $event->producer->getRoutingKey(),
+            'queue_name' => $queueName,
+            'queue_content' => $event->producer->payload(),
+            'delay_time' => $event->delayTime ?? 0,
+            'produce_status' => SystemQueueLog::PRODUCE_STATUS_SUCCESS
+        ]);
+
+        $this->setId($id);
 
         $payload = json_decode($event->producer->payload(), true);
 
@@ -75,15 +86,7 @@ class QueueProduceListener implements ListenerInterface
             ]);
         }
 
-        $this->service->save([
-            'id' => $id,
-            'exchange_name' => $event->producer->getExchange(),
-            'routing_key_name' => $event->producer->getRoutingKey(),
-            'queue_name' => $queueName,
-            'queue_content' => $event->producer->payload(),
-            'delay_time' => $event->delayTime ?? 0,
-            'produce_status' => SystemQueueLog::PRODUCE_STATUS_SUCCESS
-        ]);
+        $this->service->update($id, [ 'queue_content' => $event->producer->payload() ]);
     }
 
     /**
@@ -122,13 +125,13 @@ class QueueProduceListener implements ListenerInterface
         ]);
     }
 
-    public function setId(string $uuid): void
+    public function setId(int $id): void
     {
-        Context::set('id', $uuid);
+        Context::set('id', $id);
     }
 
-    public function getId(): string
+    public function getId(): int
     {
-        return Context::get('id', '');
+        return Context::get('id', 0);
     }
 }

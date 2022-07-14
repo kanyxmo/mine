@@ -19,9 +19,9 @@ use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Class JwtCommand
- * @Command
  * @package System\Command
  */
+#[Command]
 class JwtCommand extends MineCommand
 {
     /**
@@ -60,7 +60,7 @@ class JwtCommand extends MineCommand
             file_put_contents($envPath, "\n{$jwtSecret}={$key}\n", FILE_APPEND);
         } else {
             file_put_contents($envPath, preg_replace(
-                "~{$jwtSecret}=[^\n]*~",
+                "~{$jwtSecret}\s*=\s*[^\n]*~",
                 "{$jwtSecret}=\"{$key}\"",
                 file_get_contents($envPath)
             ));

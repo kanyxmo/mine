@@ -12,8 +12,7 @@
 declare(strict_types=1);
 namespace Mine\Helper;
 
-use Phper666\JWTAuth\JWT;
-use Phper666\JWTAuth\Util\JWTUtil;
+use Xmo\JWTAuth\JWT;
 use Psr\SimpleCache\InvalidArgumentException;
 
 class AppVerify
@@ -21,7 +20,7 @@ class AppVerify
     /**
      * @var JWT
      */
-    protected $jwt;
+    protected JWT $jwt;
 
 
     /**

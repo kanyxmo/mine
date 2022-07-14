@@ -25,30 +25,29 @@ trait VueSaveGeneratorTraits
      */
     protected function getFormListCode(SettingGenerateColumns $column): string
     {
-        switch ($column->view_type) {
-            case 'password':
-                return $this->passwordCode($column);
-            case 'textarea':
-                return $this->textareaCode($column);
-            case 'select':
-                return $this->selectCode($column);
-            case 'radio':
-                return $this->radioCode($column);
-            case 'checkbox':
-                return $this->checkboxCode($column);
-            case 'date':
-                return $this->dateCode($column);
-            case 'selectResource':
-                return $this->selectResource($column);
-            case 'image':
-                return $this->imageCode($column);
-            case 'file':
-                return $this->fileCode($column);
-            case 'editor':
-                return $this->editorCode($column);
-            default:
-                return $this->textCode($column);
-        }
+        return match ($column->view_type) {
+            'password'  => $this->passwordCode($column),
+            'textarea'  => $this->textareaCode($column),
+            'select'    => $this->selectCode($column),
+            'radio'     => $this->radioCode($column),
+            'checkbox'  => $this->checkboxCode($column),
+            'date'      => $this->dateCode($column),        // 1
+            'time'      => $this->timeCode($column),        // 1
+            'image'     => $this->imageCode($column),
+            'file'      => $this->fileCode($column),
+            'editor'    => $this->editorCode($column),
+            'inputNumber' => $this->inputNumber($column),
+            'switch'      => $this->switchCode($column),
+            'rate'        => $this->rateCode($column),
+            'slider'      => $this->sliderCode($column),
+            'area'        => $this->areaCode($column),
+            'colorPicker' => $this->colorPickerCode($column),
+            'userSelect'  => $this->userSelectCode($column),
+            'userinfo'    => $this->userinfoCode($column),
+            'selectResourceRadio' => $this->selectResourceRadio($column),
+            'selectResourceMulti' => $this->selectResourceMulti($column),
+            default     => $this->textCode($column),
+        };
     }
 
     /**
@@ -58,13 +57,11 @@ trait VueSaveGeneratorTraits
      */
     protected function textCode(SettingGenerateColumns $column): string
     {
-        return <<<VUE
-
-        <el-form-item label="{$column->column_comment}" prop="{$column->column_name}">
-            <el-input v-model="form.{$column->column_name}" clearable placeholder="请输入{$column->column_comment}" />
-        </el-form-item>
-
-VUE;
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}'],
+            [$column->column_name, $column->column_comment],
+            $this->getFormItemTemplate('text')
+        );
     }
 
     /**
@@ -74,13 +71,11 @@ VUE;
      */
     protected function passwordCode(SettingGenerateColumns $column): string
     {
-        return <<<VUE
-
-        <el-form-item label="{$column->column_comment}" prop="{$column->column_name}">
-            <el-input v-model="form.{$column->column_name}" show-password clearable placeholder="请输入{$column->column_comment}" />
-        </el-form-item>
-
-VUE;
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}'],
+            [$column->column_name, $column->column_comment],
+            $this->getFormItemTemplate('password')
+        );
     }
 
     /**
@@ -90,13 +85,11 @@ VUE;
      */
     protected function textareaCode(SettingGenerateColumns $column): string
     {
-        return <<<VUE
-
-        <el-form-item label="{$column->column_comment}" prop="{$column->column_name}">
-            <el-input v-model="form.{$column->column_name}" type="textarea" :rows="3" clearable placeholder="请输入{$column->column_comment}" />
-        </el-form-item>
-
-VUE;
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}'],
+            [$column->column_name, $column->column_comment],
+            $this->getFormItemTemplate('textarea')
+        );
     }
 
     /**
@@ -106,30 +99,25 @@ VUE;
      */
     protected function selectCode(SettingGenerateColumns $column): string
     {
-        if ($column->dict_type) {
-            return <<<VUE
-
-        <el-form-item label="{$column->column_comment}" prop="{$column->column_name}">
-            <el-select v-model="form.{$column->column_name}" style="width:100%" clearable placeholder="请选择{$column->column_comment}">
-                <el-option
-                    v-for="(item, index) in {$column->dict_type}_data"
-                    :key="index" :label="item.label"
-                    :value="item.value"
-                >{{item.label}}</el-option>
-            </el-select>
-        </el-form-item>
-
-VUE;
-        } else {
-            return <<<VUE
-
-        <el-form-item label="{$column->column_comment}" prop="{$column->column_name}">
-            <el-select v-model="form.{$column->column_name}" style="width:100%" clearable placeholder="请选择{$column->column_comment}">
-            </el-select>
-        </el-form-item>
-
-VUE;
+        $dictCode = '';
+        if (!empty($column->options['select'])) {
+            foreach ($column->options['select'] as $item) {
+                $dictCode .= sprintf(
+                    "  <el-option label=\"%s\" value=\"%s\" />\n        ",
+                    $item['name'],
+                    $item['value']
+                );
+            }
+        } else if ($column->dict_type) {
+            $dictCode = str_replace(
+                '{DICT_COLUMN}', $column->dict_type, $this->getFormItemTemplate('selectOption')
+            );
         }
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}', '{SELECT_OPTION}'],
+            [$column->column_name, $column->column_comment, $dictCode],
+            $this->getFormItemTemplate('select')
+        );
     }
 
     /**
@@ -139,33 +127,25 @@ VUE;
      */
     protected function radioCode(SettingGenerateColumns $column): string
     {
-        if ($column->dict_type) {
-            return <<<VUE
-
-        <el-form-item label="{$column->column_comment}" prop="{$column->column_name}">
-            <el-radio-group v-model="form.{$column->column_name}">
-                <el-radio
-                    v-for="(item, index) in {$column->dict_type}_data"
-                    :key="index"
-                    :label="item.value"
-                >{{item.label}}</el-radio>
-            </el-radio-group>
-        </el-form-item>
-
-VUE;
-
-        } else {
-            return <<<VUE
-
-        <el-form-item label="{$column->column_comment}" prop="{$column->column_name}">
-            <el-radio-group v-model="form.{$column->column_name}">
-                <el-radio label="0">是</el-radio>
-                <el-radio label="1">否</el-radio>
-            </el-radio-group>
-        </el-form-item>
-
-VUE;
+        $dictCode = '';
+        if (!empty($column->options['radio'])) {
+            foreach ($column->options['radio'] as $item) {
+                $dictCode .= sprintf(
+                    "  <el-radio label=\"%s\">%s</el-radio>\n        ",
+                    $item['value'],
+                    $item['name']
+                );
+            }
+        } else if ($column->dict_type) {
+            $dictCode = str_replace(
+                '{DICT_COLUMN}', $column->dict_type, $this->getFormItemTemplate('radioOption')
+            );
         }
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}', '{RADIO_OPTION}'],
+            [$column->column_name, $column->column_comment, $dictCode],
+            $this->getFormItemTemplate('radio')
+        );
     }
 
     /**
@@ -175,30 +155,25 @@ VUE;
      */
     protected function checkboxCode(SettingGenerateColumns $column): string
     {
-        if ($column->dict_type) {
-            return <<<VUE
-
-        <el-form-item label="{$column->column_comment}" prop="{$column->column_name}">
-            <el-checkbox-group v-model="form.{$column->column_name}">
-                <el-checkbox
-                    v-for="(item, index) in {$column->dict_type}_data"
-                    :key="index"
-                    :label="item.value"
-                >{{item.label}}</el-checkbox>
-            </el-checkbox-group>
-        </el-form-item>
-
-VUE;
-        } else {
-            return <<<VUE
-
-        <el-form-item label="{$column->column_comment}" prop="{$column->column_name}">
-            <el-checkbox-group v-model="form.{$column->column_name}">
-            </el-checkbox-group>
-        </el-form-item>
-
-VUE;
+        $dictCode = '';
+        if (!empty($column->options['checkbox'])) {
+            foreach ($column->options['checkbox'] as $item) {
+                $dictCode .= sprintf(
+                    "  <el-checkbox label=\"%s\" />%s</el-checkbox>\n        ",
+                    $item['value'],
+                    $item['name']
+                );
+            }
+        } else if ($column->dict_type) {
+            $dictCode = str_replace(
+                '{DICT_COLUMN}', $column->dict_type, $this->getFormItemTemplate('checkboxOption')
+            );
         }
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}', '{CHECKBOX_OPTION}'],
+            [$column->column_name, $column->column_comment, $dictCode],
+            $this->getFormItemTemplate('checkbox')
+        );
     }
 
     /**
@@ -208,40 +183,60 @@ VUE;
      */
     protected function dateCode(SettingGenerateColumns $column): string
     {
-        return <<<VUE
-
-        <el-form-item label="{$column->column_comment}" prop="{$column->column_name}">
-            <el-date-picker
-                type="date"
-                placeholder="请选择{$column->column_comment}"
-                v-model="form.{$column->column_name}"
-                style="width: 100%;"
-            ></el-date-picker>
-        </el-form-item>
-
-VUE;
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}', '{DATE_TYPE}', '{WEEK_FORMAT}', '{RANGE_TIPS}'],
+            [
+                $column->column_name,
+                $column->column_comment,
+                $column->options['date'],
+                $column->options['date'] === 'week' ? 'format="第 ww 周"' : '',
+                strpos($column->options['date'], 'range') > 0 ? 'start-placeholder="起始时间" end-placeholder="结束时间"' : ''
+            ],
+            $this->getFormItemTemplate('date')
+        );
     }
 
     /**
-     * selectResource
      * @param SettingGenerateColumns $column
      * @return string
      */
-    protected function selectResource(SettingGenerateColumns $column): string
+    protected function timeCode(SettingGenerateColumns $column): string
     {
-        $name = Str::studly($column->column_name);
-        return <<<VUE
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}'],
+            [$column->column_name, $column->column_comment],
+            $this->getFormItemTemplate('time')
+        );
+    }
 
-        <el-form-item label="{$column->column_comment}" prop="{$column->column_name}">
-            <ma-resource-select
-                :resource="true"
-                :thumb="true"
-                :value="form.{$column->column_name}"
-                @upload-data="uploadSuccess{$name}"
-            />
-        </el-form-item>
+    /**
+     * 资源选择单选模式
+     * selectResourceRadio
+     * @param SettingGenerateColumns $column
+     * @return string
+     */
+    protected function selectResourceRadio(SettingGenerateColumns $column): string
+    {
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}'],
+            [$column->column_name, $column->column_comment],
+            $this->getFormItemTemplate('selectResourceRadio')
+        );
+    }
 
-VUE;
+    /**
+     * 资源选择多选模式
+     * selectResourceMulti
+     * @param SettingGenerateColumns $column
+     * @return string
+     */
+    protected function selectResourceMulti(SettingGenerateColumns $column): string
+    {
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}'],
+            [$column->column_name, $column->column_comment],
+            $this->getFormItemTemplate('selectResourceMulti')
+        );
     }
 
     /**
@@ -251,20 +246,11 @@ VUE;
      */
     protected function imageCode(SettingGenerateColumns $column): string
     {
-        $name = Str::studly($column->column_name);
-        return <<<VUE
-
-        <el-form-item label="{$column->column_comment}" prop="{$column->column_name}">
-            <sc-upload
-                v-model="form.{$column->column_name}"
-                title="上传{$column->column_name}"
-                :compress="1"
-                :aspectRatio="1/1"
-                @success="handlerUploadImage{$name}"
-            />
-        </el-form-item>
-
-VUE;
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}', '{COLUMN_TITLE_NAME}'],
+            [$column->column_name, $column->column_comment, Str::studly($column->column_name)],
+            $this->getFormItemTemplate('uploadImage')
+        );
     }
 
     /**
@@ -274,21 +260,11 @@ VUE;
      */
     protected function fileCode(SettingGenerateColumns $column): string
     {
-        $name = Str::studly($column->column_name);
-        return <<<VUE
-
-        <el-form-item label="{$column->column_comment}" prop="{$column->column_name}">
-            <sc-upload
-                v-model="form.{$column->column_name}"
-                title="上传{$column->column_name}"
-                type="file"
-                :compress="1"
-                :aspectRatio="1/1"
-                @success="handlerUploadFile{$name}"
-            />
-        </el-form-item>
-
-VUE;
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}', '{COLUMN_TITLE_NAME}'],
+            [$column->column_name, $column->column_comment, Str::studly($column->column_name)],
+            $this->getFormItemTemplate('uploadFile')
+        );
     }
 
     /**
@@ -298,13 +274,118 @@ VUE;
      */
     protected function editorCode(SettingGenerateColumns $column): string
     {
-        return <<<VUE
-
-        <el-form-item label="{$column->column_comment}" prop="{$column->column_name}">
-            <editor v-model="form.{$column->column_name}" placeholder="请输入{$column->column_comment}" :height="400"></editor>
-        </el-form-item>
-
-VUE;
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}'],
+            [$column->column_name, $column->column_comment],
+            $this->getFormItemTemplate('editor')
+        );
     }
 
+    /**
+     * @param SettingGenerateColumns $column
+     * @return string
+     */
+    protected function inputNumber(SettingGenerateColumns $column): string
+    {
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}'],
+            [$column->column_name, $column->column_comment],
+            $this->getFormItemTemplate('inputNumber')
+        );
+    }
+
+    /**
+     * @param SettingGenerateColumns $column
+     * @return string
+     */
+    protected function switchCode(SettingGenerateColumns $column): string
+    {
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}'],
+            [$column->column_name, $column->column_comment],
+            $this->getFormItemTemplate('switch')
+        );
+    }
+
+    /**
+     * @param SettingGenerateColumns $column
+     * @return string
+     */
+    protected function rateCode(SettingGenerateColumns $column): string
+    {
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}'],
+            [$column->column_name, $column->column_comment],
+            $this->getFormItemTemplate('rate')
+        );
+    }
+
+    /**
+     * @param SettingGenerateColumns $column
+     * @return string
+     */
+    protected function sliderCode(SettingGenerateColumns $column): string
+    {
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}'],
+            [$column->column_name, $column->column_comment],
+            $this->getFormItemTemplate('slider')
+        );
+    }
+
+    /**
+     * @param SettingGenerateColumns $column
+     * @return string
+     */
+    protected function areaCode(SettingGenerateColumns $column): string
+    {
+        $type = $column->options['area']['type'] === 'select' ? 'areaSelect' : 'areaCascader';
+        $value = $column->options['area']['type'] === 'code' ? 'code' : 'name';
+
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}', '{AREA_VALUE_TYPE}'],
+            [$column->column_name, $column->column_comment, $value],
+            $this->getFormItemTemplate($type)
+        );
+    }
+
+    /**
+     * @param SettingGenerateColumns $column
+     * @return string
+     */
+    protected function colorPickerCode(SettingGenerateColumns $column): string
+    {
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}'],
+            [$column->column_name, $column->column_comment],
+            $this->getFormItemTemplate('colorPicker')
+        );
+    }
+
+    /**
+     * @param SettingGenerateColumns $column
+     * @return string
+     */
+    protected function userSelectCode(SettingGenerateColumns $column): string
+    {
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}'],
+            [$column->column_name, $column->column_comment],
+            $this->getFormItemTemplate('userSelect')
+        );
+    }
+
+    /**
+     * 用户信息
+     * @param SettingGenerateColumns $column
+     * @return string
+     */
+    protected function userinfoCode(SettingGenerateColumns $column): string
+    {
+        return str_replace(
+            ['{COLUMN_NAME}', '{LABEL_NAME}'],
+            [$column->column_name, $column->column_comment],
+            $this->getFormItemTemplate('userinfo')
+        );
+    }
 }

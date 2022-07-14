@@ -15,8 +15,8 @@ namespace Mine\Middlewares;
 use App\Setting\Service\ModuleService;
 use Hyperf\Di\Annotation\AnnotationCollector;
 use Hyperf\Di\Annotation\Inject;
-use Mine\Exception\NormalStatusException;
 use Mine\Helper\Str;
+use Mine\Exception\NormalStatusException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -29,10 +29,10 @@ class CheckModuleMiddleware implements MiddlewareInterface
 {
     /**
      * 模块服务
-     * @Inject
      * @var ModuleService
      */
-    protected $service;
+    #[Inject]
+    protected ModuleService $service;
 
     /**
      * @param ServerRequestInterface $request
@@ -51,13 +51,18 @@ class CheckModuleMiddleware implements MiddlewareInterface
 
             $path = $moduleName . '/' . $controllerName;
 
-            $moduleName = Str::title($moduleName);
+            $moduleName = Str::lower($moduleName);
 
-            $moduleEnabled = $this->service->getModuleEnabled($moduleName);
+            $module['enabled'] = false;
+
+            foreach ($this->service->getModuleCache() as $name => $item) if (Str::lower($name) === $moduleName) {
+                $module = $item;
+                break;
+            }
 
             $annotation = AnnotationCollector::getClassesByAnnotation('Hyperf\HttpServer\Annotation\Controller');
 
-            foreach ($annotation as $item) if ( $item->server === 'http' && $item->prefix === $path && !$moduleEnabled ) {
+            foreach ($annotation as $item) if ( $item->server === 'http' && $item->prefix === $path && !$module['enabled']) {
                 throw new NormalStatusException('模块被禁用', 500);
             }
         }

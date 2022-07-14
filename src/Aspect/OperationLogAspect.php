@@ -29,8 +29,8 @@ use Psr\Http\Message\ResponseInterface;
 /**
  * Class OperationLogAspect
  * @package Mine\Aspect
- * @Aspect
  */
+#[Aspect]
 class OperationLogAspect extends AbstractAspect
 {
     public $annotations = [
@@ -38,9 +38,9 @@ class OperationLogAspect extends AbstractAspect
     ];
 
     /**
-     * @var ContainerInterface
+     * 容器
      */
-    protected $container;
+    protected ContainerInterface $container;
 
     public function __construct()
     {
