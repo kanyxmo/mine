@@ -13,7 +13,7 @@
             "Mine\\": "src/"
         },
         "files": [
-            "src/Helper/functions.php"
+            "./src/Helper/functions.php"
         ]
     },
     "autoload-dev": {
